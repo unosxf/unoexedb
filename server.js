@@ -2,23 +2,42 @@ const express = require('express');
 const crypto = require('crypto');
 const path = require('path');
 const app = express();
+
+// 1. DYNAMIC PORT: Railway will tell the app which port to use.
+// 0.0.0.0 is crucial for external access.
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
-app.use(express.static('public'));
 
-// Key Generation Logic
-function generateKey(prefix = "MOD") {
-    const randomPart = crypto.randomBytes(8).toString('hex').toUpperCase();
-    return `${prefix}-${randomPart}-${crypto.randomInt(1000, 9999)}`;
+// 2. STATIC FILES: Serve your HTML from the 'public' folder.
+app.use(express.static(path.join(__dirname, 'public')));
+
+// 3. KEY GENERATION LOGIC
+function generateKey(prefix = "CODM") {
+    // Generates a high-entropy random string
+    const randomPart = crypto.randomBytes(6).toString('hex').toUpperCase();
+    const timestamp = Date.now().toString().slice(-4);
+    return `${prefix}-${randomPart}-${timestamp}`;
 }
 
+// 4. API ENDPOINT
 app.post('/api/generate', (req, res) => {
-    // In a production scenario, you'd add auth here
-    const newKey = generateKey('CODM');
-    res.json({ success: true, key: newKey, timestamp: new Date().toISOString() });
+    try {
+        const newKey = generateKey();
+        console.log(`[LOG] Key Generated: ${newKey}`);
+        res.json({ 
+            success: true, 
+            key: newKey, 
+            generatedAt: new Date().toLocaleString() 
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Server Error" });
+    }
 });
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+// 5. START SERVER
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`-----------------------------------------`);
+    console.log(`🚀 KEY GENERATOR LIVE: http://0.0.0.0:${PORT}`);
+    console.log(`-----------------------------------------`);
 });
