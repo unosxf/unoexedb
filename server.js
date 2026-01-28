@@ -7,39 +7,39 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 1. IN-MEMORY STORAGE (Stores keys and their expiry timestamps)
 let activeKeys = {}; 
 
-// 2. KEY GENERATION WITH EXPIRY (default 24 hours)
-function generateKey(hours = 24) {
-    const key = `CODM-${crypto.randomBytes(4).toString('hex').toUpperCase()}-${Math.floor(Math.random() * 9000 + 1000)}`;
-    const expiryDate = new Date();
-    expiryDate.setHours(expiryDate.getHours() + hours);
-    
-    activeKeys[key] = {
-        expiry: expiryDate,
-        status: 'Active'
-    };
-    return { key, expiry: expiryDate };
-}
-
-// 3. GENERATE API
+// 1. GENERATE KEY (For your Website)
 app.post('/api/generate', (req, res) => {
-    const duration = req.body.duration || 24; // Default to 24h if not specified
-    const data = generateKey(duration);
-    res.json({ success: true, ...data });
+    const duration = req.body.duration || 24;
+    const key = `UNO-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+    const expiryDate = new Date();
+    expiryDate.setHours(expiryDate.getHours() + duration);
+    
+    activeKeys[key] = { expiry: expiryDate };
+    res.json({ success: true, key: key, expiry: expiryDate });
 });
 
-// 4. DASHBOARD API (Sends current active keys to your dashboard)
-app.get('/api/admin/dashboard', (req, res) => {
+// 2. VERIFY KEY (For your CODM Mod Menu)
+app.post('/api/verify', (req, res) => {
+    const { key } = req.body; // The game sends the key here
+    const keyData = activeKeys[key];
     const now = new Date();
-    // Clean up expired keys on the fly
-    Object.keys(activeKeys).forEach(k => {
-        if (new Date(activeKeys[k].expiry) < now) delete activeKeys[k];
-    });
+
+    if (keyData && new Date(keyData.expiry) > now) {
+        console.log(`[AUTH] Key Accepted: ${key}`);
+        return res.status(200).send("OK"); // Sending "OK" is standard for mod menus
+    } 
+    
+    console.log(`[AUTH] Key Denied: ${key}`);
+    res.status(403).send("INVALID");
+});
+
+// 3. DASHBOARD DATA
+app.get('/api/admin/dashboard', (req, res) => {
     res.json(activeKeys);
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`UNO KEY DATA system online on port ${PORT}`);
 });
