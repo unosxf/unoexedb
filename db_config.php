@@ -1,14 +1,15 @@
 <?php
-// db_config.php 
-$host = getenv('mysql.railway.internal');
-$user = getenv('root');
-$pass = getenv('jwSZcQlwTxSOiPhCWedsiqwXheknWXXe');
-$db   = getenv('railway');
-$port = getenv('3306');
+
+$host = getenv('MYSQLHOST');
+$user = getenv('MYSQLUSER');
+$pass = getenv('MYSQLPASSWORD');
+$db   = getenv('MYSQLDATABASE');
+$port = getenv('MYSQLPORT');
 
 $conn = new mysqli($host, $user, $pass, $db, $port);
 
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
+
 ?>
